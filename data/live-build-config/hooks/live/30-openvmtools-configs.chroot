@@ -3,6 +3,10 @@
 # open-vm-tools settings
 
 import re
+import platform
+
+if (platform.machine() == 'aarch64'):
+    exit(0)
 
 vmtools_config = """
 [guestinfo]
