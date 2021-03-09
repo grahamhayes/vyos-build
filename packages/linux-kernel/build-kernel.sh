@@ -1,14 +1,23 @@
 #!/bin/sh
 CWD=$(pwd)
 KERNEL_SRC=linux
+ARCH=${ARCH:-$(uname -m)}
 
 if [ ! -d ${KERNEL_SRC} ]; then
     echo "Linux Kernel source directory does not exists, please 'git clone'"
     exit 1
 fi
 
-echo "I: Copy Kernel config (x86_64_vyos_defconfig) to Kernel Source"
-cp -rv arch/ ${KERNEL_SRC}/
+if [ "${ARCH}" = "x86_64" ]; then
+	echo "I: Copy Kernel config (x86_64_vyos_defconfig) to Kernel Source"
+	cp x86_64_vyos_defconfig ${KERNEL_SRC}/arch/x86/configs
+elif [ "${ARCH}" = "aarch64" ]; then
+	echo "I: Copy kernel config (arm64_vyos_defconfig) to Kernel Source"
+	cp arm64_vyos_defconfig ${KERNEL_SRC}/arch/arm64/configs
+else
+	echo "E: Unimplemented architecture ${ARCH}"
+	exit 1
+fi
 
 cd ${KERNEL_SRC}
 
@@ -29,9 +38,14 @@ do
     patch -p1 < ${PATCH_DIR}/${patch}
 done
 
-echo "I: make vyos_defconfig"
-# Select Kernel configuration - currently there is only one
-make vyos_defconfig
+if [ "${ARCH}" = "x86_64" ]; then
+	echo "I: make x86_64_vyos_defconfig"
+	# Select Kernel configuration - currently there is only one
+	make x86_64_vyos_defconfig
+elif [ "${ARCH}" = "aarch64" ]; then
+	echo "I: make arm64_vyos_defconfig"
+	make arm64_vyos_defconfig
+fi
 
 echo "I: Generate environment file containing Kernel variable"
 cat << EOF >${CWD}/kernel-vars
