@@ -6,7 +6,7 @@
   "vyos_mirror": "http://dev.packages.vyos.net/repositories/current",
   "vyos_branch": "current",
   "kernel_version": "5.10.42",
-  "kernel_flavor": "amd64-vyos",
+  "kernel_flavor": "arm64-vyos",
   "release_train": "sagitta",
   "additional_repositories": [
     "deb http://repo.saltstack.com/py3/debian/10/amd64/archive/3002.5 buster main",
