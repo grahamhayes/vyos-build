@@ -160,6 +160,18 @@ oracle: clean prepare
 	cd $(build_dir)
 	@../scripts/build-oracle-image
 
+.PHONY: arm64
+.ONESHELL:
+arm64: clean prepare
+	@set -e
+	@echo "It's not like I'm building this specially for you or anything!"
+	mkdir -p build/config/includes.chroot/etc/cloud/cloud.cfg.d
+	cp tools/cloud-init/OCI/90_dpkg.cfg build/config/includes.chroot/etc/cloud/cloud.cfg.d/
+	cp tools/cloud-init/cloud-init.list.chroot build/config/package-lists/
+	cp -f tools/cloud-init/OCI/config.boot.default build/config/includes.chroot/opt/vyatta/etc/
+	cd $(build_dir)
+	@../scripts/build-arm64-image
+
 .PHONY: PACKET
 .ONESHELL:
 PACKET: clean prepare
