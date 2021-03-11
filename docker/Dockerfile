@@ -347,17 +347,14 @@ RUN apt-get update && apt-get install -y \
 
 # Packages needed for vyos-1x-xdp package, gcc-multilib is not available on
 # arm64 but required by XDP
-RUN if dpkg-architecture -ii386 || dpkg-architecture -iamd64; then \
-      apt-get update && apt-get install -y \
-        gcc-multilib \
+RUN      apt-get update && apt-get install -y \
         clang \
         llvm \
         libelf-dev \
         libpcap-dev \
         build-essential; \
       git clone https://github.com/libbpf/libbpf.git /tmp/libbpf && \
-        cd /tmp/libbpf && git checkout b91f53ec5f1aba2 && cd src && make install; \
-    fi
+        cd /tmp/libbpf && git checkout b91f53ec5f1aba2 && cd src && make install
 
 # Packages needed for vyos-xe-guest-utilities
 RUN apt-get update && apt-get install -y \
