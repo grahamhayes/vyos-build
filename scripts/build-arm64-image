@@ -15,7 +15,7 @@
 # File: build-arm64-image
 # Purpose:
 # Build a VyOS disk image for ARM64 EFI-capable systems
-
+set -eux
 lb bootstrap
 
 lb chroot
@@ -126,6 +126,8 @@ mkdir -p ${MOUNT_DIR}/boot/"$version"/rw
 mount
 echo "/ union" > ${MOUNT_DIR}/persistence.conf
 cp binary/live/filesystem.squashfs ${MOUNT_DIR}/boot/"$version"/"$version.squashfs"
+echo "*****"
+echo `ls binary/live/*`
 cp binary/live/initrd.img* ${MOUNT_DIR}/boot/"$version"/initrd.img
 cp binary/live/vmlinuz* ${MOUNT_DIR}/boot/"$version"/vmlinuz
 

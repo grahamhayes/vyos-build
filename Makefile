@@ -163,7 +163,7 @@ oracle: clean prepare
 .PHONY: arm64
 .ONESHELL:
 arm64: clean prepare
-	@set -e
+	@set -eux
 	@echo "It's not like I'm building this specially for you or anything!"
 	mkdir -p build/config/includes.chroot/etc/cloud/cloud.cfg.d
 	cp tools/cloud-init/OCI/90_dpkg.cfg build/config/includes.chroot/etc/cloud/cloud.cfg.d/
