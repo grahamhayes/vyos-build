@@ -26,6 +26,15 @@ prepare:
 
 	@scripts/build-flavour
 
+.PHONY: arm64
+.ONESHELL:
+arm64: clean prepare
+	@set -e
+	@echo "It's not like I'm building this specially for you or anything!"
+	cp -f tools/cloud-init/AWS/config.boot.default build/config/includes.chroot/opt/vyatta/etc/
+	cd $(build_dir)
+	@../scripts/build-arm64-image
+
 .PHONY: iso
 .ONESHELL:
 iso: check_build_config clean prepare

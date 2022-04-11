@@ -1,0 +1,166 @@
+#!/bin/sh
+#
+# Copyright (C) 2018 VyOS maintainers and contributors
+#
+# This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License version 2 or later as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# File: build-arm64-image
+# Purpose:
+# Build a VyOS disk image for ARM64 EFI-capable systems
+
+lb bootstrap
+
+lb chroot
+lb installer
+lb binary_chroot
+lb chroot_devpts install
+lb chroot_proc install
+lb chroot_selinuxfs install
+lb chroot_sysfs install
+lb chroot_hosts install
+lb chroot_resolv install
+lb chroot_hostname install
+lb chroot_sysv-rc install
+lb chroot_upstart install
+lb chroot_apt install-binary
+lb chroot_archives chroot install
+lb binary_rootfs
+lb binary_manifest
+lb binary_package-lists
+lb binary_linux-image
+lb binary_memtest
+lb binary_grub
+lb binary_grub2
+lb binary_syslinux
+lb binary_disk
+lb binary_loadlin
+lb binary_win32-loader
+lb binary_includes
+lb binary_hooks
+lb binary_checksums
+
+# get vyos build version
+version=$(cat version)
+dateymd=$(date +%Y%m%d)
+
+######################################
+### Prepare the HDD (format, ext.) ###
+######################################
+PARTED=/sbin/parted
+OUTPUT=disk.raw
+OUTPUTQCOW2=VyOS-"$dateymd".qcow2
+IMAGE_SIZE=10
+qemu-img create -f raw ${OUTPUT} ${IMAGE_SIZE}G
+
+${PARTED} -s ${OUTPUT} mktable msdos
+${PARTED} -s -a optimal ${OUTPUT} mkpart primary fat32 1Mi 256Mi
+${PARTED} -s -a optimal ${OUTPUT} mkpart primary ext4 257Mi 100%
+${PARTED} -s ${OUTPUT} set 1 boot on
+RESULT_KPARTX=`kpartx -asv ${OUTPUT} 2>&1`
+echo "KPARTX result: "
+echo "${RESULT_KPARTX}"
+echo "** KPARTX result"
+if echo "${RESULT_KPARTX}" | grep "^add map" ; then
+	LOOP_DEVICE=$(echo "${RESULT_KPARTX}" | grep ":1)" | cut -d" " -f3)
+	BOOT_DEVICE=$(echo "${RESULT_KPARTX}" | grep ":0)" | cut -d" " -f3)
+	LOOPRAW_DEVICE=${LOOP_DEVICE%p*}
+	echo "kpartx mounted using: ${LOOP_DEVICE} via ${LOOPRAW_DEVICE}"
+	echo "boot device: ${BOOT_DEVICE} via ${LOOPRAW_DEVICE}"
+else
+	echo "It seems kpartx didn't mount the image correctly: exiting."
+	exit 1
+fi
+
+cleanup(){
+	error=$?
+	[ ! -d "${MOUNT_DIR}" ] && return
+	if [ "$error" -gt 0 ]; then
+		echo
+		echo "Error $error"
+	else
+		echo "Finished."
+	fi
+
+	set +e
+
+	sync
+	umount "${MOUNT_DIR}/boot/EFI"
+	umount -l ${MOUNT_DIR}
+	rmdir ${MOUNT_DIR}
+
+        umount devpts-live
+        umount proc-live
+        umount sysfs-live
+	dmsetup remove --deferred ${BOOT_DEVICE}
+	dmsetup remove --deferred ${LOOP_DEVICE}
+	losetup -d /dev/${LOOPRAW_DEVICE}
+	exit $error
+}
+trap "cleanup" EXIT TERM INT
+
+mkfs.ext4 /dev/mapper/${LOOP_DEVICE} -L persistence
+UUID=$(blkid -o value -s UUID /dev/mapper/${LOOP_DEVICE})
+
+# No fsck because of X days without checks
+tune2fs -i 0 /dev/mapper/${LOOP_DEVICE}
+
+mkfs.fat -F 32 /dev/mapper/${BOOT_DEVICE}
+MOUNT_DIR=`mktemp -d -t build-debimg.XXXXXX`
+mount /dev/mapper/${LOOP_DEVICE} ${MOUNT_DIR}
+
+########################
+### Setting-up files ###
+########################
+mkdir -p ${MOUNT_DIR}/boot/grub
+mkdir -p ${MOUNT_DIR}/boot/EFI
+mount "/dev/mapper/${BOOT_DEVICE}" "${MOUNT_DIR}/boot/EFI"
+mkdir -p ${MOUNT_DIR}/boot/"$version"/rw
+mount
+echo "/ union" > ${MOUNT_DIR}/persistence.conf
+cp binary/live/filesystem.squashfs ${MOUNT_DIR}/boot/"$version"/"$version.squashfs"
+cp binary/live/initrd.img* ${MOUNT_DIR}/boot/"$version"/initrd.img
+cp binary/live/vmlinuz* ${MOUNT_DIR}/boot/"$version"/vmlinuz
+
+########################
+### Create grub menu ###
+########################
+cat > ${MOUNT_DIR}/boot/grub/grub.cfg << EOF
+set timeout=5
+set default=0
+
+menuentry "VyOS $version (Serial console)" {
+        linux /boot/"$version"/vmlinuz boot=live vyos-union=/boot/"$version" systemd.show_status=true net.ifnames=0
+        initrd /boot/"$version"/initrd.img
+}
+
+menuentry "Lost password change $version (Serial console)" {
+        linux /boot/"$version"/vmlinuz boot=live vyos-union=/boot/"$version" systemd.show_status=true init=/opt/vyatta/sbin/standalone_root_pw_reset net.ifnames=0
+        initrd /boot/"$version"/initrd.img
+}
+EOF
+
+
+#############################
+### Setting-up bootloader ###
+#############################
+grub-install  --force --no-floppy --removable --no-nvram --efi-directory "${MOUNT_DIR}/boot/EFI"  --boot-directory "${MOUNT_DIR}/boot"
+#-skip-fs-probe /dev/${LOOPRAW_DEVICE}
+find "${MOUNT_DIR}/boot/EFI"
+
+###################
+### HOOK SCRIPT ###
+###################
+fstrim ${MOUNT_DIR}
+sync
+
+qemu-img convert -f raw -O qcow2 ${OUTPUT} ${OUTPUTQCOW2}
+#rm $OUTPUT 
+echo "RAW: ${OUTPUT}"

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 CWD=$(pwd)
 KERNEL_SRC=linux
 
@@ -46,7 +46,8 @@ touch .scmversion
 make bindeb-pkg BUILD_TOOLS=1 LOCALVERSION=${KERNEL_SUFFIX} KDEB_PKGVERSION=${KERNEL_VERSION}-1 -j $(getconf _NPROCESSORS_ONLN)
 
 cd $CWD
-if [[ $? == 0 ]]; then
+
+if [ $? == 0 ]; then
     for package in $(ls linux-*.deb)
     do
         ln -sf linux-kernel/$package ..
