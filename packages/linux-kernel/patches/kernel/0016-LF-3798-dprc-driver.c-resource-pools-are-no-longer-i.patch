@@ -1,0 +1,37 @@
+From 312a066416e73ea00125f2eba4c282bf08bce75b Mon Sep 17 00:00:00 2001
+From: Robert-Ionut Alexa <robert-ionut.alexa@nxp.com>
+Date: Tue, 25 May 2021 12:12:03 +0300
+Subject: [PATCH 16/16] LF-3798: dprc-driver.c: resource pools are no longer
+ initialized
+
+dprc_scan_container() function is no longer called on a device
+endpoint lookup, which, in turn, called fsl_mc_init_all_resource_pools.
+Scanning for objects is done using the dprc_scan_objects()
+function directly.
+
+Signed-off-by: Robert-Ionut Alexa <robert-ionut.alexa@nxp.com>
+---
+ drivers/bus/fsl-mc/fsl-mc-bus.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/bus/fsl-mc/fsl-mc-bus.c b/drivers/bus/fsl-mc/fsl-mc-bus.c
+index 5fde76763487..30a071732fdd 100644
+--- a/drivers/bus/fsl-mc/fsl-mc-bus.c
++++ b/drivers/bus/fsl-mc/fsl-mc-bus.c
+@@ -940,7 +940,12 @@ struct fsl_mc_device *fsl_mc_get_endpoint(struct fsl_mc_device *mc_dev)
+ 	 * Force a rescan of the devices in this container and retry the lookup.
+ 	 */
+ 	if (!endpoint) {
+-		err = dprc_scan_container(mc_bus_dev, true);
++		struct fsl_mc_bus *mc_bus = to_fsl_mc_bus(mc_bus_dev);
++
++		mutex_lock(&mc_bus->scan_mutex);
++		err = dprc_scan_objects(mc_bus_dev, true);
++		mutex_unlock(&mc_bus->scan_mutex);
++
+ 		if (err < 0)
+ 			return ERR_PTR(err);
+ 	}
+-- 
+2.20.1
+

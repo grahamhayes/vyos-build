@@ -6,3 +6,6 @@ key/*
 packages/*
 !packages/*/
 testinstall*.img
+packages/linux-kernel/external/*
+packages/linux-kernel/traverse-kernel-patches/*
+packages/linux-kernel/*deb

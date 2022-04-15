@@ -1,0 +1,45 @@
+From 55322138961141d335a0feb96a43056fadd86e2e Mon Sep 17 00:00:00 2001
+From: Ioana Ciornei <ioana.ciornei@nxp.com>
+Date: Fri, 8 Jan 2021 11:07:24 +0200
+Subject: [PATCH 14/16] bus: fsl-mc: return -EPROBE_DEFER when a device is not
+ yet discovered
+
+The fsl_mc_get_endpoint() should return a pointer to the connected
+fsl_mc device, if there is one. By interrogating the MC firmware, we
+know if there is an endpoint or not so when the endpoint device is
+actually searched on the fsl-mc bus and not found we are hitting the
+case in which the device has not been yet discovered by the bus.
+
+Return -EPROBE_DEFER so that callers can differentiate this case.
+
+Signed-off-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Acked-by: Laurentiu Tudor <laurentiu.tudor@nxp.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/bus/fsl-mc/fsl-mc-bus.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/bus/fsl-mc/fsl-mc-bus.c b/drivers/bus/fsl-mc/fsl-mc-bus.c
+index 92d1f9b430a1..92e27ae05b81 100644
+--- a/drivers/bus/fsl-mc/fsl-mc-bus.c
++++ b/drivers/bus/fsl-mc/fsl-mc-bus.c
+@@ -933,6 +933,15 @@ struct fsl_mc_device *fsl_mc_get_endpoint(struct fsl_mc_device *mc_dev)
+ 	endpoint_desc.id = endpoint2.id;
+ 	endpoint = fsl_mc_device_lookup(&endpoint_desc, mc_bus_dev);
+ 
++	/*
++	 * We know that the device has an endpoint because we verified by
++	 * interrogating the firmware. This is the case when the device was not
++	 * yet discovered by the fsl-mc bus, thus the lookup returned NULL.
++	 * Differentiate this case by returning EPROBE_DEFER.
++	 */
++	if (!endpoint)
++		return ERR_PTR(-EPROBE_DEFER);
++
+ 	return endpoint;
+ }
+ EXPORT_SYMBOL_GPL(fsl_mc_get_endpoint);
+-- 
+2.20.1
+

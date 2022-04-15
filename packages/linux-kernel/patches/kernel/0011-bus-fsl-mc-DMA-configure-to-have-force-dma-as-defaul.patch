@@ -1,0 +1,34 @@
+From 345ea80ba80c0dfe1449e57cd2d150ad21c0c986 Mon Sep 17 00:00:00 2001
+From: Mathew McBride <matt@traverse.com.au>
+Date: Mon, 30 Aug 2021 05:17:35 +0000
+Subject: [PATCH 11/13] bus: fsl-mc: DMA configure to have force-dma as default
+
+Implicit dma setting from bus works when dma-ranges
+specified but not otherwise. We need to continue
+to go for force_dma as default for cases dma-ranges not
+specified. Example dynamic device tree generation for
+generic kvm virtual machines.
+
+Signed-off-by: Bharat Bhushan <Bharat.Bhushan@nxp.com>
+Signed-off-by: Mathew McBride <matt@traverse.com.au>
+[Update for >=5.10]
+---
+ drivers/bus/fsl-mc/fsl-mc-bus.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/bus/fsl-mc/fsl-mc-bus.c b/drivers/bus/fsl-mc/fsl-mc-bus.c
+index 72e01a2e0f1b..92d1f9b430a1 100644
+--- a/drivers/bus/fsl-mc/fsl-mc-bus.c
++++ b/drivers/bus/fsl-mc/fsl-mc-bus.c
+@@ -139,7 +139,7 @@ static int fsl_mc_dma_configure(struct device *dev)
+ 		dma_dev = dma_dev->parent;
+ 
+ 	if (dev_of_node(dma_dev))
+-		return of_dma_configure_id(dev, dma_dev->of_node, 0, &input_id);
++		return of_dma_configure_id(dev, dma_dev->of_node, 1, &input_id);
+ 
+ 	return acpi_dma_configure_id(dev, DEV_DMA_COHERENT, &input_id);
+ }
+-- 
+2.20.1
+

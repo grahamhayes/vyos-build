@@ -1,0 +1,49 @@
+From a33aa8da4b27be3ba79c67e7f4c12494ac3e1a57 Mon Sep 17 00:00:00 2001
+From: Laurentiu Tudor <laurentiu.tudor@nxp.com>
+Date: Tue, 23 Mar 2021 13:01:15 +0200
+Subject: [PATCH 15/16] bus: fsl-mc: force device rescan if endpoint not
+ discovered
+
+If the endpoint of a device is not yet probed on the bus force
+a rescan of the devices and retry to get a reference to the
+endpoint device. If the device is still not found then we assume
+it's in a different isolation context (container/DPRC) thus
+unavailable and return a permission error.
+
+Signed-off-by: Laurentiu Tudor <laurentiu.tudor@nxp.com>
+---
+ drivers/bus/fsl-mc/fsl-mc-bus.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/bus/fsl-mc/fsl-mc-bus.c b/drivers/bus/fsl-mc/fsl-mc-bus.c
+index 92e27ae05b81..5fde76763487 100644
+--- a/drivers/bus/fsl-mc/fsl-mc-bus.c
++++ b/drivers/bus/fsl-mc/fsl-mc-bus.c
+@@ -937,10 +937,22 @@ struct fsl_mc_device *fsl_mc_get_endpoint(struct fsl_mc_device *mc_dev)
+ 	 * We know that the device has an endpoint because we verified by
+ 	 * interrogating the firmware. This is the case when the device was not
+ 	 * yet discovered by the fsl-mc bus, thus the lookup returned NULL.
+-	 * Differentiate this case by returning EPROBE_DEFER.
++	 * Force a rescan of the devices in this container and retry the lookup.
++	 */
++	if (!endpoint) {
++		err = dprc_scan_container(mc_bus_dev, true);
++		if (err < 0)
++			return ERR_PTR(err);
++	}
++
++	endpoint = fsl_mc_device_lookup(&endpoint_desc, mc_bus_dev);
++	/*
++	 * This means that the endpoint might reside in a different isolation
++	 * context (DPRC/container). Not much to do, so return a permssion
++	 * error.
+ 	 */
+ 	if (!endpoint)
+-		return ERR_PTR(-EPROBE_DEFER);
++		return ERR_PTR(-EPERM);
+ 
+ 	return endpoint;
+ }
+-- 
+2.20.1
+

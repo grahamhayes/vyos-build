@@ -31,7 +31,6 @@ prepare:
 arm64: clean prepare
 	@set -e
 	@echo "It's not like I'm building this specially for you or anything!"
-	cp -f tools/cloud-init/AWS/config.boot.default build/config/includes.chroot/opt/vyatta/etc/
 	cd $(build_dir)
 	@../scripts/build-arm64-image
 

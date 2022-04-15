@@ -13,7 +13,7 @@ cp -rv arch/ ${KERNEL_SRC}/
 cd ${KERNEL_SRC}
 
 echo "I: clean modified files"
-git reset --hard HEAD
+# git reset --hard HEAD
 
 KERNEL_VERSION=$(make kernelversion)
 KERNEL_SUFFIX=-$(dpkg --print-architecture)-vyos
@@ -22,16 +22,16 @@ KERNEL_SUFFIX=-$(dpkg --print-architecture)-vyos
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
 # Saving time/resources is essential :-)
-PATCH_DIR=${CWD}/patches/kernel
-for patch in $(ls ${PATCH_DIR})
-do
-    echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
-    patch -p1 < ${PATCH_DIR}/${patch}
-done
+# PATCH_DIR=${CWD}/patches/kernel
+# for patch in $(ls ${PATCH_DIR})
+# do
+#     echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
+#     patch -p1 < ${PATCH_DIR}/${patch}
+# done
 
 echo "I: make vyos_defconfig"
 # Select Kernel configuration - currently there is only one
-make vyos_defconfig
+make ten64_defconfig
 
 echo "I: Generate environment file containing Kernel variable"
 cat << EOF >${CWD}/kernel-vars
