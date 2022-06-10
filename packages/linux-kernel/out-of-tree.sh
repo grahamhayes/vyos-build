@@ -7,8 +7,8 @@ BASEDIR=$(pwd)
 
 SANITIZED_CODENAME=$(echo "${CHANGELOG_DIST}" | sed "s/_/-/g")
 
-KERNEL_HEADER_DEB=linux-headers-5.10.110-arm64-vyos_5.10.110-1_arm64.deb
-sudo dpkg -i linux-headers-5.10.110-arm64-vyos_5.10.110-1_arm64.deb
+KERNEL_HEADER_DEB=linux-headers-5.10.121-arm64-vyos_5.10.121-1_arm64.deb
+sudo dpkg -i linux-headers-5.10.121-arm64-vyos_5.10.121-1_arm64.deb
 KERNEL_VERSION=$(dpkg-deb --info "${KERNEL_HEADER_DEB}" | grep "Package: linux-headers" | sed "s/ Package: linux-headers-//g")
 # Traverse sensors
 mkdir -p external

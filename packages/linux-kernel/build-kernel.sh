@@ -22,12 +22,12 @@ KERNEL_SUFFIX=-$(dpkg --print-architecture)-vyos
 # It's easier to habe them here and make use of the upstream
 # repository instead of maintaining a full Kernel Fork.
 # Saving time/resources is essential :-)
-# PATCH_DIR=${CWD}/patches/kernel
-# for patch in $(ls ${PATCH_DIR})
-# do
-#     echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
-#     patch -p1 < ${PATCH_DIR}/${patch}
-# done
+PATCH_DIR=${CWD}/patches/kernel
+for patch in $(ls ${PATCH_DIR})
+do
+    echo "I: Apply Kernel patch: ${PATCH_DIR}/${patch}"
+    patch -p1 < ${PATCH_DIR}/${patch}
+done
 
 echo "I: make vyos_defconfig"
 # Select Kernel configuration - currently there is only one

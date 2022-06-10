@@ -28,7 +28,7 @@ prepare:
 
 .PHONY: arm64
 .ONESHELL:
-arm64: clean prepare
+arm64: check_build_config clean prepare
 	@set -e
 	@echo "It's not like I'm building this specially for you or anything!"
 	cd $(build_dir)

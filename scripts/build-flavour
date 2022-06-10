@@ -32,6 +32,6 @@ if [ $BUILD_ARCH  = 'amd64' -o $BUILD_ARCH = 'i386' ]; then
 fi
 
 # Install grub-efi-arm if it's an arm build
-if [ $BUILD_ARCH  = 'armhf' -o $BUILD_ARCH = 'armel' -o $BUILD_ARCH = 'arm' ]; then
+if [ $BUILD_ARCH  = 'armhf' -o $BUILD_ARCH = 'armel' -o $BUILD_ARCH = 'arm' -o $BUILD_ARCH = 'arm64' ]; then
     cp data/package-lists/vyos-arm.list.chroot build/config/package-lists/
 fi
